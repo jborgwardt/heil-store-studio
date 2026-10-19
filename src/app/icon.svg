@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <rect width="256" height="256" rx="58" fill="#12141c"/>
+  <path fill="#1a2033" stroke="#8ea2ff" stroke-width="7" stroke-linejoin="round" d="M142 38 74 142h52l-22 76 92-112h-56z">
+    <animate attributeName="opacity" values="0.45;1;0.45" dur="1.6s" repeatCount="indefinite"/>
+  </path>
+  <path fill="#c9d4ff" d="M142 38 74 142h52l-22 76 92-112h-56z" opacity="0">
+    <animate attributeName="opacity" values="0;0.55;0" dur="1.6s" repeatCount="indefinite"/>
+  </path>
+</svg>

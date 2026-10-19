@@ -1,0 +1,8 @@
+node_modules
+.next
+data
+agent-tools
+.git
+tests
+*.md
+!README.md

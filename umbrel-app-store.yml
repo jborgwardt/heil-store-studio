@@ -1,0 +1,2 @@
+id: "heilss" # Choose the ID for your app store. This should contain only alphabets ("a to z") and dashes ("-").
+name: "HeilSS" # Shown in umbrelOS as "<name> App Store".

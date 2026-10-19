@@ -1,0 +1,29 @@
+manifestVersion: 1
+id: heilss-heilss
+storage:
+  dataRoot: data
+category: developer
+name: HeilSS
+version: "1.0.0"
+tagline: Build and manage a community app store
+icon: "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+CiAgPHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHJ4PSI1OCIgZmlsbD0iIzEyMTQxYyIvPgogIDxwYXRoIGZpbGw9IiMxYTIwMzMiIHN0cm9rZT0iIzhlYTJmZiIgc3Ryb2tlLXdpZHRoPSI3IiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBkPSJNMTQyIDM4IDc0IDE0Mmg1MmwtMjIgNzYgOTItMTEyaC01NnoiPgogICAgPGFuaW1hdGUgYXR0cmlidXRlTmFtZT0ib3BhY2l0eSIgdmFsdWVzPSIwLjQ1OzE7MC40NSIgZHVyPSIxLjZzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIvPgogIDwvcGF0aD4KICA8cGF0aCBmaWxsPSIjYzlkNGZmIiBkPSJNMTQyIDM4IDc0IDE0Mmg1MmwtMjIgNzYgOTItMTEyaC01NnoiIG9wYWNpdHk9IjAiPgogICAgPGFuaW1hdGUgYXR0cmlidXRlTmFtZT0ib3BhY2l0eSIgdmFsdWVzPSIwOzAuNTU7MCIgZHVyPSIxLjZzIiByZXBlYXRDb3VudD0iaW5kZWZpbml0ZSIvPgogIDwvcGF0aD4KPC9zdmc+Cg=="
+description: >-
+  HeilSS creates an umbrelOS community app store. Paste a Docker Compose file,
+  a docker run command, a GitHub repository, or an image name. It writes a
+  valid app entry, commits it, and serves the store over git so Umbrel can
+  install those apps.
+
+  HeilSS itself is not one of the apps in the store it manages. Open it from
+  your Umbrel desktop, then add the store URL it shows under Community App Stores.
+releaseNotes: ""
+developer: Heil
+website: https://heil.haus
+dependencies: []
+repo: ""
+support: https://heil.haus
+port: 8480
+gallery: []
+path: ""
+defaultUsername: ""
+defaultPassword: ""
+submitter: Justin
