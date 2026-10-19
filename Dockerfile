@@ -19,8 +19,7 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=8480
 ENV HEILSS_DATA_DIR=/data
-RUN groupadd --gid 1000 heilss \
-  && useradd --uid 1000 --gid 1000 --create-home --shell /usr/sbin/nologin heilss
+# node:22 images already ship user "node" with uid/gid 1000; run as that.
 COPY --from=build --chown=1000:1000 /app/.next/standalone ./
 COPY --from=build --chown=1000:1000 /app/.next/static ./.next/static
 COPY --from=build --chown=1000:1000 /app/public ./public
