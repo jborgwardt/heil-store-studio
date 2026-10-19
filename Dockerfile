@@ -20,6 +20,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=8480
 ENV HEILSS_DATA_DIR=/data
 # node:22 images already ship user "node" with uid/gid 1000; run as that.
+RUN mkdir -p /data && chown 1000:1000 /data
 COPY --from=build --chown=1000:1000 /app/.next/standalone ./
 COPY --from=build --chown=1000:1000 /app/.next/static ./.next/static
 COPY --from=build --chown=1000:1000 /app/public ./public
