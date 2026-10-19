@@ -9,7 +9,7 @@ services:
       APP_PORT: 8480
 
   web:
-    image: heilss:1.0.0
+    image: ghcr.io/jborgwardt/heil-store-studio:1.0.0@sha256:2c6af2fe601c988b93952535dd094e2e47cacda2604ab3c92a5a51015421a0a5
     user: "1000:1000"
     restart: on-failure
     init: true
