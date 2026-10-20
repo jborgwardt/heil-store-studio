@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: heilss-signtools
+category: developer
+name: SignTools
+version: 1.0.0
+tagline: Self-hosted iOS app sideloading/signing
+icon: https://raw.githubusercontent.com/SignTools/SignTools/master/img/logo.png
+description: SignTools web UI on port 18080 (not 8080). Restore data/ and signer-cfg.yml into the app data dir before first start (signer-cfg.yml must exist as a file).
+releaseNotes: ''
+developer: SignTools
+website: https://github.com/SignTools/SignTools
+dependencies: []
+repo: https://github.com/SignTools/SignTools
+support: https://github.com/SignTools/SignTools
+port: 18080
+gallery: []
+path: ''
+defaultUsername: ''
+defaultPassword: ''
+submitter: Justin
+submission: https://github.com/jborgwardt/heil-store-studio

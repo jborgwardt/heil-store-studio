@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: heilss-nzbdav
+category: media
+name: NzbDAV
+version: 1.0.0
+tagline: WebDAV server that streams NZB content
+icon: https://raw.githubusercontent.com/nwithan8/unraid_templates/master/images/nzb-dav-icon.png
+description: NzbDAV exposes Usenet NZBs over WebDAV for streaming. Restore old /config into data/config.
+releaseNotes: ''
+developer: nzbdav-dev
+website: https://github.com/nzbdav-dev/nzbdav
+dependencies: []
+repo: https://github.com/nzbdav-dev/nzbdav
+support: https://github.com/nzbdav-dev/nzbdav
+port: 3300
+gallery: []
+path: ''
+defaultUsername: ''
+defaultPassword: ''
+submitter: Justin
+submission: https://github.com/jborgwardt/heil-store-studio

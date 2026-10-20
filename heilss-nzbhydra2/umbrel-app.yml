@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: heilss-nzbhydra2
+category: media
+name: NZBHydra2
+version: 1.0.0
+tagline: Meta search for NZB indexers
+icon: https://raw.githubusercontent.com/ich777/docker-templates/master/ich777/images/nzbhydra2.png
+description: NZBHydra2 meta-search (ich777 image). Restore old /nzbhydra2 into data/nzbhydra2.
+releaseNotes: ''
+developer: theotherp
+website: https://github.com/theotherp/nzbhydra2
+dependencies: []
+repo: https://github.com/theotherp/nzbhydra2
+support: https://github.com/theotherp/nzbhydra2
+port: 5076
+gallery: []
+path: ''
+defaultUsername: ''
+defaultPassword: ''
+submitter: Justin
+submission: https://github.com/jborgwardt/heil-store-studio

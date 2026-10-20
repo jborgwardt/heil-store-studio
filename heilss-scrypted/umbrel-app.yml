@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: heilss-scrypted
+category: automation
+name: Scrypted
+version: 1.0.0
+tagline: Home video integration platform (HomeKit, NVR)
+icon: https://raw.githubusercontent.com/PTRFRLL/unraid-templates/master/scrypted/icon.png
+description: Scrypted on host networking (needed for HomeKit/mDNS). Web UI http://<umbrel-ip>:11080 (https 10443). Restore /server/volume into data/volume.
+releaseNotes: ''
+developer: koush
+website: https://www.scrypted.app
+dependencies: []
+repo: https://www.scrypted.app
+support: https://www.scrypted.app
+port: 11080
+gallery: []
+path: ''
+defaultUsername: ''
+defaultPassword: ''
+submitter: Justin
+submission: https://github.com/jborgwardt/heil-store-studio

@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: heilss-tor-socks-proxy
+category: networking
+name: Tor SOCKS Proxy
+version: 1.0.0
+tagline: Tor SOCKS5 proxy on port 9050
+icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/tor.png
+description: Tor SOCKS5 proxy published on host port 9050 (container 9150). Not a web app; the open button will not show a page.
+releaseNotes: ''
+developer: PeterDaveHello
+website: https://github.com/PeterDaveHello/tor-socks-proxy
+dependencies: []
+repo: https://github.com/PeterDaveHello/tor-socks-proxy
+support: https://github.com/PeterDaveHello/tor-socks-proxy
+port: 9050
+gallery: []
+path: ''
+defaultUsername: ''
+defaultPassword: ''
+submitter: Justin
+submission: https://github.com/jborgwardt/heil-store-studio

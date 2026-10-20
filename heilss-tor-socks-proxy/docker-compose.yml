@@ -1,0 +1,7 @@
+version: '3.7'
+services:
+  server:
+    image: peterdavehello/tor-socks-proxy:latest
+    restart: on-failure
+    ports:
+    - 9050:9150

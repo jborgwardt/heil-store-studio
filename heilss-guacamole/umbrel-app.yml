@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: heilss-guacamole
+category: networking
+name: Guacamole
+version: 1.0.0
+tagline: Clientless remote desktop gateway
+icon: https://cdn.jsdelivr.net/gh/homarr-labs/dashboard-icons/png/guacamole.png
+description: Apache Guacamole 1.6.0 with guacd and PostgreSQL. Schema is generated automatically on first start; DB password is derived from the Umbrel app seed. Default login guacadmin/guacadmin on a fresh DB; change it. (Old panzer pgdata can be restored instead, but then set the old DB password.)
+releaseNotes: ''
+developer: Apache Software Foundation
+website: https://guacamole.apache.org
+dependencies: []
+repo: https://guacamole.apache.org
+support: https://guacamole.apache.org
+port: 8095
+gallery: []
+path: ''
+defaultUsername: ''
+defaultPassword: ''
+submitter: Justin
+submission: https://github.com/jborgwardt/heil-store-studio

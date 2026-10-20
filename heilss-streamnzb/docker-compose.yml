@@ -1,0 +1,15 @@
+version: '3.7'
+services:
+  app_proxy:
+    environment:
+      APP_HOST: heilss-streamnzb_server_1
+      APP_PORT: 7000
+  server:
+    image: ghcr.io/gaisberg/streamnzb:latest
+    restart: on-failure
+    environment:
+    - TZ=America/New_York
+    ports:
+    - 119:119
+    volumes:
+    - ${APP_DATA_DIR}/data:/app/data

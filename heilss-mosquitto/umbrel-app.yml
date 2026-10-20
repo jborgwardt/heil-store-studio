@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: heilss-mosquitto
+category: automation
+name: Mosquitto (panzer)
+version: 1.0.0
+tagline: Eclipse Mosquitto MQTT broker (1883, ws 9001)
+icon: https://getumbrel.github.io/umbrel-apps-gallery/mosquitto/icon.svg
+description: 'MQTT broker on host ports 1883 and 9001 (websockets). Restore old config/data into data/. Conflicts with the official Umbrel Mosquitto app (also 1883): install only one. The web page is just an info page.'
+releaseNotes: ''
+developer: Eclipse Foundation
+website: https://mosquitto.org
+dependencies: []
+repo: https://mosquitto.org
+support: https://mosquitto.org
+port: 9021
+gallery: []
+path: ''
+defaultUsername: ''
+defaultPassword: ''
+submitter: Justin
+submission: https://github.com/jborgwardt/heil-store-studio

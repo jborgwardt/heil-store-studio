@@ -6,3 +6,4 @@ agent-tools
 tests
 *.md
 !README.md
+images/

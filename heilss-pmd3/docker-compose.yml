@@ -1,0 +1,12 @@
+version: '3.7'
+services:
+  server:
+    image: python:3.12-slim
+    restart: on-failure
+    network_mode: host
+    command:
+    - sleep
+    - infinity
+    volumes:
+    - ${APP_DATA_DIR}/data/home:/root
+    - ${APP_DATA_DIR}/data/lockdown:/var/lib/lockdown

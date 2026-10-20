@@ -2,7 +2,7 @@ name: image
 on:
   push:
     branches: [main]
-    paths-ignore: ['heilss-heilss/docker-compose.yml']
+    paths: ['src/**', 'Dockerfile', 'package*.json', 'docker-entrypoint.sh', '.github/workflows/image.yml']
   workflow_dispatch:
 permissions:
   contents: write

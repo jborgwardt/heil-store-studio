@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: heilss-altmount
+category: networking
+name: AltMount
+version: 1.0.0
+tagline: Usenet virtual filesystem (WebDAV/FUSE)
+icon: https://raw.githubusercontent.com/javi11/altmount/main/docs/static/img/logo.png
+description: AltMount mounts Usenet NZBs as a virtual filesystem. Runs with PUID/PGID 1000 and a per-install JWT secret derived from the Umbrel app seed. Mount output lands in the app data dir under data/mnt.
+releaseNotes: ''
+developer: javi11
+website: https://github.com/javi11/altmount
+dependencies: []
+repo: https://github.com/javi11/altmount
+support: https://github.com/javi11/altmount
+port: 8585
+gallery: []
+path: ''
+defaultUsername: ''
+defaultPassword: ''
+submitter: Justin
+submission: https://github.com/jborgwardt/heil-store-studio

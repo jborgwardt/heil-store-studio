@@ -1,0 +1,27 @@
+name: bubbalostreamer-image
+on:
+  push:
+    branches: [main]
+    paths: ['images/bubbalostreamer_*.tar.gz', '.github/workflows/bubbalostreamer-image.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+  packages: write
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Load and push prebuilt image
+        run: |
+          set -e
+          docker load -i images/bubbalostreamer_1.8.2-altmount.1.tar.gz
+          T=ghcr.io/jborgwardt/bubbalostreamer:1.8.2-altmount.1
+          docker tag bubbalostreamer:1.8.2-altmount.1 "$T"
+          docker push "$T" | tee push.log
+          echo "DIGEST=$(grep -o 'sha256:[a-f0-9]*' push.log | tail -1)" | tee -a $GITHUB_STEP_SUMMARY

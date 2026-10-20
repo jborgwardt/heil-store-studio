@@ -1,0 +1,9 @@
+version: '3.7'
+services:
+  server:
+    image: alpine/socat:latest
+    restart: on-failure
+    network_mode: host
+    command:
+    - TCP-LISTEN:4650,bind=100.64.0.13,fork,reuseaddr
+    - TCP:securesmtp.t-online.de:465

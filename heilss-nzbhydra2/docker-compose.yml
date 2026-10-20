@@ -1,0 +1,19 @@
+version: '3.7'
+services:
+  app_proxy:
+    environment:
+      APP_HOST: heilss-nzbhydra2_server_1
+      APP_PORT: 5076
+  server:
+    image: ghcr.io/ich777/nzbhydra2:latest
+    restart: on-failure
+    environment:
+    - UID=1000
+    - GID=1000
+    - UMASK=0000
+    - DATA_PERM=770
+    - TZ=America/New_York
+    - NZBHYDRA2_REL=latest
+    volumes:
+    - ${APP_DATA_DIR}/data/nzbhydra2:/nzbhydra2
+    - ${UMBREL_ROOT}/data/storage/downloads:/mnt/downloads

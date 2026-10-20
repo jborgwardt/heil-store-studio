@@ -1,0 +1,19 @@
+version: '3.7'
+services:
+  server:
+    image: ghcr.io/koush/scrypted:latest
+    restart: on-failure
+    network_mode: host
+    environment:
+    - TZ=America/New_York
+    - SCRYPTED_INSTALL_ENVIRONMENT=docker
+    - SCRYPTED_CAN_RESTART=true
+    - SCRYPTED_DOCKER_FLAVOR=full
+    volumes:
+    - ${APP_DATA_DIR}/data/volume:/server/volume
+    - ${APP_DATA_DIR}/data/nvr:/nvr
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: '3'

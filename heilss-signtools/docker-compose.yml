@@ -1,0 +1,12 @@
+version: '3.7'
+services:
+  app_proxy:
+    environment:
+      APP_HOST: heilss-signtools_server_1
+      APP_PORT: 8080
+  server:
+    image: signtools/signtools:3.0.12
+    restart: on-failure
+    volumes:
+    - ${APP_DATA_DIR}/data/data:/data
+    - ${APP_DATA_DIR}/data/signer-cfg.yml:/signer-cfg.yml

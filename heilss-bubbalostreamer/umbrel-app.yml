@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: heilss-bubbalostreamer
+category: media
+name: BubbaloStreamer
+version: 1.0.0
+tagline: Usenet streaming Stremio addon (AltMount build)
+icon: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+PHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHJ4PSI1OCIgZmlsbD0iIzdiMmZmNyIvPjx0ZXh0IHg9IjEyOCIgeT0iMTYwIiBmb250LWZhbWlseT0iSGVsdmV0aWNhLEFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEwIiBmb250LXdlaWdodD0iNzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmZmZmZmIj5CPC90ZXh0Pjwvc3ZnPgo=
+description: Custom BubbaloStreamer 1.8.2 build with AltMount integration, migrated from panzer. Restore the old /config (config/runtime-env.json) into the app data dir. ADDON_SHARED_SECRET is derived per-install from the Umbrel app seed; if you need the old addon URLs to keep working, set the old secret in runtime config instead. AltMount is reachable at http://<umbrel-ip>:8585.
+releaseNotes: ''
+developer: Justin
+website: https://github.com/jborgwardt/heil-store-studio
+dependencies: []
+repo: https://github.com/jborgwardt/heil-store-studio
+support: https://github.com/jborgwardt/heil-store-studio
+port: 7070
+gallery: []
+path: ''
+defaultUsername: ''
+defaultPassword: ''
+submitter: Justin
+submission: https://github.com/jborgwardt/heil-store-studio

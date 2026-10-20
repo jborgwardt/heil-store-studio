@@ -1,0 +1,21 @@
+manifestVersion: 1
+id: heilss-atvloadly
+category: developer
+name: atvloadly
+version: 1.0.0
+tagline: Sideload IPAs to Apple TV
+icon: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+PHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHJ4PSI1OCIgZmlsbD0iIzExMTgyNyIvPjx0ZXh0IHg9IjEyOCIgeT0iMTYwIiBmb250LWZhbWlseT0iSGVsdmV0aWNhLEFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEwIiBmb250LXdlaWdodD0iNzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmZmZmZmIj50djwvdGV4dD48L3N2Zz4K
+description: atvloadly on host networking, web UI on 5533 (SERVICE_PORT; never port 80). Needs avahi/dbus from host for pairing. Restore /data into data/.
+releaseNotes: ''
+developer: bitxeno
+website: https://github.com/bitxeno/atvloadly
+dependencies: []
+repo: https://github.com/bitxeno/atvloadly
+support: https://github.com/bitxeno/atvloadly
+port: 5533
+gallery: []
+path: ''
+defaultUsername: ''
+defaultPassword: ''
+submitter: Justin
+submission: https://github.com/jborgwardt/heil-store-studio

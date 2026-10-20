@@ -1,0 +1,18 @@
+version: '3.7'
+services:
+  app_proxy:
+    environment:
+      APP_HOST: heilss-bubbalostreamer_server_1
+      APP_PORT: 7000
+  server:
+    image: ghcr.io/jborgwardt/bubbalostreamer:1.8.2-altmount.1
+    restart: on-failure
+    init: true
+    environment:
+    - TZ=America/New_York
+    - CONFIG_DIR=/config/config
+    - ADDON_SHARED_SECRET=${APP_BUBBALOSTREAMER_ADDON_SECRET}
+    extra_hosts:
+    - host.docker.internal:host-gateway
+    volumes:
+    - ${APP_DATA_DIR}/data:/config

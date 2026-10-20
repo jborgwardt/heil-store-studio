@@ -1,0 +1,14 @@
+version: '3.7'
+services:
+  server:
+    image: bitxeno/atvloadly:latest
+    restart: on-failure
+    network_mode: host
+    security_opt:
+    - seccomp:unconfined
+    environment:
+    - SERVICE_PORT=5533
+    volumes:
+    - ${APP_DATA_DIR}/data:/data
+    - /var/run/avahi-daemon:/var/run/avahi-daemon
+    - /var/run/dbus:/var/run/dbus
