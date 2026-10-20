@@ -1,0 +1,15 @@
+# Seed config for Umbrel. AltMount fills in all other defaults on first start.
+# Explicit allowed_origins is REQUIRED: without it AltMount falls back to CORS "*"
+# with AllowCredentials=true, which makes Fiber panic at startup ("Insecure setup").
+api:
+    prefix: /api
+    allowed_origins:
+        - http://192.168.1.25:8585
+        - http://umbrel.local:8585
+        - http://100.64.0.13:8585
+        - http://umbrel:8585
+        - https://192.168.1.25:8585
+        - https://umbrel.local:8585
+        - https://100.64.0.13:8585
+auth:
+    login_required: true
