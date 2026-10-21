@@ -2,21 +2,18 @@ manifestVersion: 1
 id: heilss-harbormaster
 category: developer
 name: Harbormaster
-version: "0.1.0"
+version: "0.2.0"
 icon: https://raw.githubusercontent.com/jborgwardt/heil-store-studio/main/images/icons/harbormaster.png
 tagline: Manage secrets, settings and ports of every installed app
 description: >-
-  Dashboard of every installed app with status, host ports and settings. Edit secrets and
-  environment variables in a form; they are saved through umbrelOS's own app settings (so they
-  survive app updates) and the app restarts. Add extra host ports with conflict warnings.
-  Every change is committed to a private repo on your self-hosted Gitea (apps/<app-id>/secret.env
-  + settings.json) and restored automatically after a reinstall or on a new Umbrel.
-  Setup: install Gitea, create a private repo and token, and create an umbrelOS MCP token
-  (Settings) with access to all apps; paste them in the Setup tab.
+  Arcane/Portainer-style manager for umbrelOS. One dashboard with every installed app: state,
+  version, containers, host ports, environment and logs, plus a port-conflict view. Apps from your
+  private Gitea app store can be edited in a form (ports, env, any compose value); saving commits to
+  the store repo, bumps the version and umbrelOS applies the update. Other apps are read-only and can
+  be adopted into the private store.
 developer: Justin
 website: https://github.com/jborgwardt/harbormaster
-dependencies:
-  - gitea
+dependencies: []
 repo: https://github.com/jborgwardt/harbormaster
 support: https://github.com/jborgwardt/harbormaster/issues
 port: 7171
@@ -24,6 +21,6 @@ gallery: []
 path: ""
 defaultUsername: ""
 defaultPassword: ""
-releaseNotes: "Initial release."
+releaseNotes: "Arcane/Portainer-style dashboard: apps, containers, ports, env, logs, port conflicts; edit private-store apps with Gitea commit + version bump + umbreld update; adopt apps."
 submitter: Justin
 submission: https://github.com/jborgwardt/heil-store-studio
