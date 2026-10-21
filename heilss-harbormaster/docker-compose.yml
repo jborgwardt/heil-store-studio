@@ -1,0 +1,21 @@
+version: "3.7"
+services:
+  app_proxy:
+    environment:
+      APP_HOST: heilss-harbormaster_web_1
+      APP_PORT: 8080
+  web:
+    image: ghcr.io/jborgwardt/harbormaster:0.1.0
+    restart: on-failure
+    environment:
+      APP_ID: heilss-harbormaster
+      DATA_DIR: /data
+      UMBREL_MCP_URL: http://host.docker.internal/mcp
+      GITEA_URL: http://gitea_server_1:8085
+      GITEA_REPO: heil/umbrel-config
+      SCHEMA_BASE_URL: https://raw.githubusercontent.com/jborgwardt/heil-store-studio/main
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+      - /var/run/docker.sock:/var/run/docker.sock

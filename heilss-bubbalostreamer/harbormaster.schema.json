@@ -1,0 +1,7 @@
+{
+  "app": "heilss-bubbalostreamer",
+  "fields": [
+    {"name": "ADDON_SHARED_SECRET", "service": "server", "required": true, "secret": true,
+     "description": "Shared secret used to sign Stremio addon URLs. Keep the old value to keep existing addon URLs working."}
+  ]
+}
