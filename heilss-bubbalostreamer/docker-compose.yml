@@ -19,7 +19,12 @@ services:
         condition: service_completed_successfully
     image: ghcr.io/jborgwardt/bubbalostreamer:1.8.2-altmount.1
     restart: on-failure
-    command: ["npm","start"]
+    # ADDON_SHARED_SECRET: read at runtime from ${APP_DATA_DIR}/data/secret.env
+    # (mounted as /config/secret.env, KEY=VALUE, chmod 600; never committed).
+    # Falls back to the per-install exports.sh value only if the file is missing.
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'if [ -f /config/secret.env ]; then set -a; . /config/secret.env; set +a; echo "ADDON_SHARED_SECRET loaded from /config/secret.env"; else echo "WARNING: /config/secret.env missing, using per-install secret"; fi; exec docker-entrypoint.sh npm start'
     environment:
       TZ: America/New_York
       CONFIG_DIR: /config/config
