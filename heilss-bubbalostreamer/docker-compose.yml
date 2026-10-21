@@ -1,18 +1,31 @@
-version: '3.7'
+version: "3.7"
 services:
   app_proxy:
     environment:
       APP_HOST: heilss-bubbalostreamer_server_1
       APP_PORT: 7000
+  restore:
+    image: alpine:3.20
+    restart: "no"
+    volumes:
+      - ${APP_DATA_DIR}/data:/appdata
+    command:
+      - /bin/sh
+      - -c
+      - 'set -e; if [ ! -e /appdata/.restored ]; then apk add --no-cache curl zstd tar >/dev/null; curl -fsSL http://100.64.0.4:3210/appdata/bubbalostreamer.tar.zst -o /tmp/a.zst; mkdir -p /tmp/x; zstd -dc /tmp/a.zst | tar -xf - -C /tmp/x; cp -a /tmp/x/bubbalostreamer/. /appdata/; fi; if [ -f /appdata/config/runtime-env.json ]; then sed -i "s#http://altmount:8080#http://192.168.1.25:8585#g" /appdata/config/runtime-env.json; fi; touch /appdata/.restored'
   server:
+    depends_on:
+      restore:
+        condition: service_completed_successfully
     image: ghcr.io/jborgwardt/bubbalostreamer:1.8.2-altmount.1
     restart: on-failure
-    init: true
+    command: ["npm","start"]
     environment:
-    - TZ=America/New_York
-    - CONFIG_DIR=/config/config
-    - ADDON_SHARED_SECRET=${APP_BUBBALOSTREAMER_ADDON_SECRET}
-    extra_hosts:
-    - host.docker.internal:host-gateway
+      TZ: America/New_York
+      CONFIG_DIR: /config/config
+      ADDON_SHARED_SECRET: ${APP_BUBBALOSTREAMER_ADDON_SECRET}
+      ALTMOUNT_URL: http://192.168.1.25:8585
+    ports:
+      - "7070:7000"
     volumes:
-    - ${APP_DATA_DIR}/data:/config
+      - ${APP_DATA_DIR}/data:/config
