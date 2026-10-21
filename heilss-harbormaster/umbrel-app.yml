@@ -2,7 +2,7 @@ manifestVersion: 1
 id: heilss-harbormaster
 category: developer
 name: Harbormaster
-version: "0.2.0"
+version: "0.2.1"
 icon: https://raw.githubusercontent.com/jborgwardt/heil-store-studio/main/images/icons/harbormaster.png
 tagline: Manage secrets, settings and ports of every installed app
 description: >-
