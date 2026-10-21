@@ -4,7 +4,7 @@ category: networking
 name: T-Online SMTP Forwarder
 version: 1.0.0
 tagline: socat TCP forward to securesmtp.t-online.de:465
-icon: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+PHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHJ4PSI1OCIgZmlsbD0iI2UyMDA3NCIvPjx0ZXh0IHg9IjEyOCIgeT0iMTYwIiBmb250LWZhbWlseT0iSGVsdmV0aWNhLEFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTEwIiBmb250LXdlaWdodD0iNzAwIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjZmZmZmZmIj5UPC90ZXh0Pjwvc3ZnPgo=
+icon: https://raw.githubusercontent.com/jborgwardt/heil-store-studio/main/images/icons/tonline-smtp-fwd.png
 description: Forwards TCP 4650 on the Umbrel Tailscale IP (100.64.0.13) to securesmtp.t-online.de:465. Host networking; requires the Tailscale app to be up. No web UI.
 releaseNotes: ''
 developer: Justin

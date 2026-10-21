@@ -4,7 +4,7 @@ category: developer
 name: pymobiledevice3 shell
 version: 1.0.0
 tagline: Python toolbox container for pymobiledevice3
-icon: data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNTYiIGhlaWdodD0iMjU2IiB2aWV3Qm94PSIwIDAgMjU2IDI1NiI+PHJlY3Qgd2lkdGg9IjI1NiIgaGVpZ2h0PSIyNTYiIHJ4PSI1OCIgZmlsbD0iIzM3NzZhYiIvPjx0ZXh0IHg9IjEyOCIgeT0iMTYwIiBmb250LWZhbWlseT0iSGVsdmV0aWNhLEFyaWFsLHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iODAiIGZvbnQtd2VpZ2h0PSI3MDAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IiNmZmZmZmYiPnBtZDM8L3RleHQ+PC9zdmc+Cg==
+icon: https://raw.githubusercontent.com/jborgwardt/heil-store-studio/main/images/icons/pmd3.png
 description: Idle python:3.12-slim container on host networking for pymobiledevice3 (use via docker exec). It has no web UI and binds no port (5534 is a placeholder, never 80).
 releaseNotes: ''
 developer: doronz88
