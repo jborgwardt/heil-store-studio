@@ -1,4 +1,4 @@
-import base64,json,pathlib,urllib.request
+import base64,json,pathlib,urllib.request,socket
 from http.server import BaseHTTPRequestHandler,ThreadingHTTPServer
 
 def rpc(method):
@@ -25,4 +25,5 @@ class Handler(BaseHTTPRequestHandler):
         elif path=='/icon.png':mime='image/png';body=pathlib.Path('/app/icon.png').read_bytes()
         else:code=404;mime='text/plain';body=b'Not found'
         self.send_response(code);self.send_header('Content-Type',mime);self.send_header('Content-Length',str(len(body)));self.send_header('Cache-Control','no-store');self.end_headers();self.wfile.write(body)
+print('Litecoin dashboard listening on '+socket.gethostbyname(socket.gethostname())+':8080',flush=True)
 ThreadingHTTPServer(('0.0.0.0',8080),Handler).serve_forever()

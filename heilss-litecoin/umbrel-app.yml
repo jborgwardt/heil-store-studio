@@ -4,7 +4,7 @@
   "name": "Litecoin Node",
   "tagline": "Your own Litecoin full node",
   "category": "finance",
-  "version": "0.21.5.8",
+  "version": "0.21.5.8-2",
   "port": 9338,
   "description": "Litecoin Core with persistent blockchain storage and a read-only sync dashboard. Initial synchronization runs in the background. Wallet functionality is disabled. Peer traffic uses port 9333; RPC stays private to the app.",
   "developer": "Litecoin Core developers",

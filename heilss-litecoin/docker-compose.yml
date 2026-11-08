@@ -71,7 +71,19 @@
       ],
       "cap_add": [
         "DAC_READ_SEARCH"
-      ]
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/api/status',timeout=15).read()"
+        ],
+        "interval": "30s",
+        "timeout": "20s",
+        "retries": 5,
+        "start_period": "120s"
+      }
     }
   },
   "networks": {
