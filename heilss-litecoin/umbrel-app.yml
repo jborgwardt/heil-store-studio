@@ -4,7 +4,7 @@
   "name": "Litecoin Node",
   "tagline": "Your own Litecoin full node",
   "category": "finance",
-  "version": "0.21.5.8-3",
+  "version": "0.21.5.8-4",
   "port": 9338,
   "description": "Litecoin Core full node with a sync dashboard and Fulcrum Electrum backend for Cake Wallet. Connect your wallet to this Umbrel host on TCP port 50001 with SSL off on your local network or VPN. Wait until both the blockchain and wallet index finish syncing. Wallet keys stay in Cake Wallet; Core wallet functionality is disabled. RPC remains private to the app.",
   "developer": "Litecoin Core developers",

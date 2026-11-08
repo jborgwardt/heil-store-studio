@@ -98,7 +98,7 @@
       "restart": "unless-stopped",
       "stop_grace_period": "2m",
       "volumes": [
-        "${APP_DATA_DIR}/fulcrum.conf:/app/fulcrum.conf:ro",
+        "${APP_DATA_DIR}/fulcrum-settings.conf:/app/fulcrum.conf:ro",
         "${APP_DATA_DIR}/data/electrum:/data",
         "${APP_DATA_DIR}/data/chain:/chain:ro"
       ],
