@@ -116,7 +116,7 @@ function normalizeLinkedStore(value: unknown): LinkedStore | null {
   // file:// remotes are for tests only (HEILSS_ALLOW_FILE_REMOTES=1).
   if (!/^https?:\/\/[^\s]+$/.test(url) && !(process.env.HEILSS_ALLOW_FILE_REMOTES === "1" && /^file:\/\/\/[^\s]+$/.test(url))) return null;
   const key = typeof v.key === "string" && /^[a-z0-9][a-z0-9-]{0,59}$/.test(v.key) ? v.key : storeKeyFor(url);
-  const branch = typeof v.branch === "string" && /^[A-Za-z0-9._/-]+$/.test(v.branch.trim()) ? v.branch.trim() : "main";
+  const branch = typeof v.branch === "string" && /^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(v.branch.trim()) && !v.branch.includes("..") ? v.branch.trim() : "main";
   return {
     key,
     url,
@@ -244,9 +244,12 @@ export function applySettingsPatch(current: Settings, patch: Record<string, unkn
   if (Array.isArray(patch.stores)) {
     const incoming: LinkedStore[] = [];
     for (const raw of patch.stores) {
+      const rawUrl = String((raw as Record<string, unknown>)?.url ?? "");
+      if (/^https?:\/\/[^/]*@/i.test(rawUrl)) throw new Error("Put the access token in the token field, not inside the store URL.");
       const item = normalizeLinkedStore(raw);
       if (!item) throw new Error("Each linked store needs an http(s) git URL");
-      const previous = current.stores.find((store) => store.key === item.key || store.url === item.url);
+      // A saved token only carries over to the same URL, so it is never sent to a different host.
+      const previous = current.stores.find((store) => store.url === item.url);
       const r = raw as Record<string, unknown>;
       // Keep the saved token unless a new one is typed; "********" is the masked placeholder.
       if (!item.token || item.token === "********") item.token = previous?.token ?? "";

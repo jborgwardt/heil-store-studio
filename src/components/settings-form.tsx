@@ -33,10 +33,10 @@ type PublicSettings = {
   };
 };
 
-type LinkedStoreRow = { key?: string; url: string; branch: string; username: string; hasToken?: boolean; clearToken?: boolean };
+// The typed token lives on its row, so removing a row can never move a token onto another store.
+type LinkedStoreRow = { key?: string; url: string; branch: string; username: string; hasToken?: boolean; clearToken?: boolean; token?: string };
 
 export function SettingsForm() {
-  const [storeTokens, setStoreTokens] = useState<Record<number, string>>({});
   const [settings, setSettings] = useState<PublicSettings | null>(null);
   const [tokens, setTokens] = useState({ umbrel: "", github: "", drive: "", cloudflare: "" });
   const [message, setMessage] = useState("");
@@ -72,14 +72,13 @@ export function SettingsForm() {
           github: { ...current.github, token: tokens.github },
           drive: { ...current.drive, accessToken: tokens.drive },
           domain: { ...current.domain, cloudflareToken: tokens.cloudflare },
-          stores: current.stores.map((store, index) => ({ ...store, token: storeTokens[index] ?? "" })),
+          stores: current.stores.map((store) => ({ ...store, token: store.token ?? "" })),
         }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "Could not save settings");
       setSettings(body.settings);
       setTokens({ umbrel: "", github: "", drive: "", cloudflare: "" });
-      setStoreTokens({});
       setMessage("Saved. Tokens stay in this app's data directory and are not shown again.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not save settings");
@@ -176,7 +175,7 @@ export function SettingsForm() {
                 <Input value={store.username} onChange={(event) => update("stores", settings.stores.map((s, i) => (i === index ? { ...s, username: event.target.value } : s)))} className="h-10" />
               </Field>
               <Field label={store.hasToken ? "Token saved. Paste a new one to replace it." : "Access token (needed to save changes)"}>
-                <Input type="password" value={storeTokens[index] ?? ""} onChange={(event) => setStoreTokens({ ...storeTokens, [index]: event.target.value })} autoComplete="off" className="h-10" />
+                <Input type="password" value={store.token ?? ""} onChange={(event) => update("stores", settings.stores.map((s, i) => (i === index ? { ...s, token: event.target.value } : s)))} autoComplete="off" className="h-10" />
               </Field>
             </div>
           </div>

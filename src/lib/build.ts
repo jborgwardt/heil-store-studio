@@ -1,4 +1,4 @@
-import { dataUrlFor, decodeIconUpload, monogramIcon, type IconData } from "@/lib/icons";
+import { dataUrlFor, decodeIconUpload, isOwnIconUrl, monogramIcon, type IconData } from "@/lib/icons";
 import { parse as parseYaml, stringify } from "yaml";
 import {
   allocatePort,
@@ -474,8 +474,22 @@ export async function buildEntry(input: BuildInput, context: BuildContext): Prom
   if (input.iconDataUrl) {
     icon = decodeIconUpload(input.iconDataUrl);
   } else if (input.keepIcon && context.existingIcon) {
-    icon = context.existingIcon.icon ?? monogramIcon(name);
-    iconField = context.existingIcon.icon ? undefined : context.existingIcon.field || undefined;
+    const { icon: fileIcon, field } = context.existingIcon;
+    if (field.startsWith("data:")) {
+      // Older HeilSS kept raster uploads only in the manifest (icon.svg was a monogram): adopt the real one.
+      try {
+        icon = decodeIconUpload(field);
+      } catch {
+        icon = fileIcon ?? monogramIcon(name);
+        iconField = field;
+      }
+    } else if (/^https?:\/\//i.test(field) && !isOwnIconUrl(field, id)) {
+      // Hosted elsewhere (e.g. an icons repo): keep that URL as it is.
+      icon = fileIcon ?? monogramIcon(name);
+      iconField = field;
+    } else {
+      icon = fileIcon ?? monogramIcon(name);
+    }
   } else if (fetchedIcon && input.autoIcon) {
     icon = { ext: "svg", data: Buffer.from(fetchedIcon, "utf8") };
   } else {

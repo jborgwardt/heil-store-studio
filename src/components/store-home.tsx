@@ -41,7 +41,7 @@ export function StoreHome() {
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  async function load() {
+  async function load(isStale: () => boolean = () => false) {
     setApps(null);
     setError("");
     fetch("/api/stores")
@@ -50,6 +50,7 @@ export function StoreHome() {
       .catch(() => undefined);
     const response = await fetch(withStore("/api/apps", store));
     const body = await response.json();
+    if (isStale()) return;
     if (!response.ok) throw new Error(body.error || "Could not load the store");
     setApps(body.apps);
     setStoreName(body.storeName);
@@ -57,14 +58,21 @@ export function StoreHome() {
     setLinked(body.linked ?? null);
     const historyResponse = await fetch(withStore("/api/history", store));
     const historyBody = await historyResponse.json();
+    if (isStale()) return;
     if (historyResponse.ok) setHistory(historyBody.history ?? []);
   }
 
   useEffect(() => {
-    load().catch((reason: Error) => {
+    // Switching stores while a slow first clone loads must not show the old store's answer.
+    let cancelled = false;
+    load(() => cancelled).catch((reason: Error) => {
+      if (cancelled) return;
       setApps([]);
       setError(reason.message);
     });
+    return () => {
+      cancelled = true;
+    };
     // load reads `store`; it is the only input.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store]);

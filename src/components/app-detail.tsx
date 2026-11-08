@@ -307,16 +307,21 @@ function IconPanel({ app, busy, onChange }: { app: Detail; busy: string; onChang
 
 function FilesPanel({ app, busy, onSave }: { app: Detail; busy: string; onSave: (files: { manifestYaml: string; composeYaml: string; bump: boolean }) => Promise<void> }) {
   const [open, setOpen] = useState(false);
-  const [manifestYaml, setManifestYaml] = useState(app.manifestYaml);
-  const [composeYaml, setComposeYaml] = useState(app.composeYaml);
+  const [manifestYaml, setManifestYaml] = useState("");
+  const [composeYaml, setComposeYaml] = useState("");
   const [bump, setBump] = useState(true);
-  useEffect(() => {
-    setManifestYaml(app.manifestYaml);
-    setComposeYaml(app.composeYaml);
-  }, [app.manifestYaml, app.composeYaml]);
   if (!open) {
     return (
-      <Button variant="secondary" className="h-10" onClick={() => setOpen(true)}>
+      <Button
+        variant="secondary"
+        className="h-10"
+        onClick={() => {
+          // Seed from the server only when opening, so a reload never wipes unsaved edits.
+          setManifestYaml(app.manifestYaml);
+          setComposeYaml(app.composeYaml);
+          setOpen(true);
+        }}
+      >
         Edit files
       </Button>
     );

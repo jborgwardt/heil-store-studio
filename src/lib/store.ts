@@ -3,7 +3,7 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { buildEntry, bumpVersion, type BuildInput, type BuiltEntry, type EntryMeta } from "@/lib/build";
 import { assertWritable, commitAll, diffFor, ensureStore, historyFor, restorePath, storeMetaYaml } from "@/lib/git";
-import { decodeIconUpload, fetchRepoIcon, findIconFile, iconHash, manifestIconUrl, monogramIcon, writeIconFile, type IconData } from "@/lib/icons";
+import { decodeIconUpload, fetchRepoIcon, findIconFile, iconHash, isOwnIconUrl, manifestIconUrl, monogramIcon, writeIconFile, type IconData } from "@/lib/icons";
 import { withLock } from "@/lib/lock";
 import { stripDigestImage } from "@/lib/parse";
 import { activeStoreKey, storeWorkDir } from "@/lib/paths";
@@ -79,6 +79,8 @@ function iconUrlBuilder(ctx: StoreContext) {
 
 function iconSrcFor(id: string, icon: (IconData & { name: string }) | null, manifestIcon: string): string {
   const key = activeStoreKey();
+  // Show what Umbrel shows: a data: icon or one hosted elsewhere wins over a stale local file.
+  if (manifestIcon.startsWith("data:") || (/^https?:\/\//i.test(manifestIcon) && !isOwnIconUrl(manifestIcon, id))) return manifestIcon;
   if (icon) return `/media/apps/${id}/icon?${key ? `store=${encodeURIComponent(key)}&` : ""}v=${iconHash(icon.data)}`;
   return manifestIcon;
 }
@@ -204,11 +206,12 @@ export async function deleteEntry(id: string): Promise<void> {
 
 export async function getEntry(id: string): Promise<EntryDetail> {
   assertAppId(id);
+  const ctx = await currentStore(); // sync a linked store before reading its files
+  await assertRegularFiles(id);
   const manifest = await readManifestFile(id);
   const meta = await readMeta(id);
   const manifestYaml = await readFile(path.join(storeWorkDir(), id, "umbrel-app.yml"), "utf8");
   const composeYaml = await readFile(path.join(storeWorkDir(), id, "docker-compose.yml"), "utf8");
-  const ctx = await currentStore();
   const issues = validateEntry({
     storeId: ctx.storeId,
     id,
@@ -268,6 +271,22 @@ export async function iconFile(id: string): Promise<{ body: Buffer; type: string
   return icon ? { body: icon.data, type: ICON_TYPES[icon.ext] } : null;
 }
 
+/**
+ * Linked stores are other people's (or other tools') repositories: refuse app folders or files that are
+ * symlinks, so reads and writes cannot leave the clone.
+ */
+async function assertRegularFiles(id: string): Promise<void> {
+  const { lstat } = await import("node:fs/promises");
+  const dir = path.join(storeWorkDir(), id);
+  const info = await lstat(dir).catch(() => null);
+  if (!info) throw new Error(`No app named ${id}`);
+  if (info.isSymbolicLink() || !info.isDirectory()) throw new Error(`${id} is not a regular folder in this store`);
+  for (const name of await readdir(dir)) {
+    if (!/^(umbrel-app\.yml|docker-compose\.yml|icon\.\w+)$/.test(name)) continue;
+    if ((await lstat(path.join(dir, name))).isSymbolicLink()) throw new Error(`${id}/${name} is a symlink; HeilSS will not follow it`);
+  }
+}
+
 function assertAppId(id: string): void {
   if (!/^[a-z0-9][a-z0-9-]*$/.test(id)) throw new Error("Invalid app id");
 }
@@ -289,6 +308,7 @@ export async function setEntryIcon(id: string, change: IconChange): Promise<Entr
   return withLock(async () => {
     await assertWritable();
     const ctx = await currentStore();
+    await assertRegularFiles(id);
     const dir = path.join(storeWorkDir(), id);
     const manifestPath = path.join(dir, "umbrel-app.yml");
     const doc = parseDocument(await readFile(manifestPath, "utf8"));
@@ -323,6 +343,7 @@ export async function saveEntryFiles(id: string, files: { manifestYaml: string; 
   return withLock(async () => {
     await assertWritable();
     const ctx = await currentStore();
+    await assertRegularFiles(id);
     const dir = path.join(storeWorkDir(), id);
     await readManifestFile(id);
     if (typeof composeYamlObject(files.composeYaml) !== "object") throw new Error("docker-compose.yml must be a YAML mapping with services.");

@@ -5,6 +5,7 @@ import path from "node:path";
 import { activeStoreKey, linkedStoreDir, storeBareDir, storeWorkDir, dataDir } from "@/lib/paths";
 import { findLinkedStore, readSettings, type LinkedStore } from "@/lib/settings";
 import { redactString } from "@/lib/redact";
+import { lockBusy } from "@/lib/lock";
 
 const exec = promisify(execFile);
 
@@ -67,24 +68,44 @@ async function withAuth<T>(store: LinkedStore, fn: (env: Record<string, string>)
 }
 
 const lastFetch = new Map<string, number>();
+const inflight = new Map<string, Promise<void>>();
 
-/** Clone a linked store, or bring a clean clone up to date with its remote branch. */
-export async function syncLinkedStore(store: LinkedStore, { force = false } = {}): Promise<void> {
+/** Clone a linked store, or bring a clean clone up to date with its remote branch. Concurrent callers share one sync. */
+export function syncLinkedStore(store: LinkedStore, opts: { force?: boolean } = {}): Promise<void> {
+  const running = inflight.get(store.key);
+  if (running) return running;
+  const job = doSyncLinkedStore(store, opts).finally(() => inflight.delete(store.key));
+  inflight.set(store.key, job);
+  return job;
+}
+
+async function doSyncLinkedStore(store: LinkedStore, { force = false }: { force?: boolean }): Promise<void> {
   const dir = linkedStoreDir(store.key);
   const hasGit = await access(path.join(dir, ".git")).then(() => true, () => false);
   if (!hasGit) {
+    // Clone next to the final folder and rename, so an interrupted clone never looks like a store.
+    const tmp = `${dir}.cloning-${process.pid}`;
+    await rm(tmp, { recursive: true, force: true });
     await rm(dir, { recursive: true, force: true });
     await mkdir(path.dirname(dir), { recursive: true });
-    await withAuth(store, (env) => git(["clone", "--branch", store.branch, "--single-branch", store.url, dir], path.dirname(dir), env));
-    await git(["config", "user.name", "HeilSS"], dir);
-    await git(["config", "user.email", "heilss@localhost"], dir);
+    // core.symlinks=false: links in someone else's repo become plain files, never paths out of the clone.
+    await withAuth(store, (env) => git(["-c", "core.symlinks=false", "clone", "--branch", store.branch, "--single-branch", "--", store.url, tmp], path.dirname(dir), env));
+    await git(["config", "core.symlinks", "false"], tmp);
+    await git(["config", "user.name", "HeilSS"], tmp);
+    await git(["config", "user.email", "heilss@localhost"], tmp);
+    const { rename } = await import("node:fs/promises");
+    await rename(tmp, dir);
     lastFetch.set(store.key, Date.now());
     return;
   }
+  // A locked write is using the tree; plain reads serve what is there instead of resetting under it.
+  if (!force && lockBusy()) return;
   if (!force && Date.now() - (lastFetch.get(store.key) ?? 0) < 20_000) return;
-  await git(["remote", "set-url", "origin", store.url], dir);
-  await withAuth(store, (env) => git(["fetch", "--quiet", "origin", store.branch], dir, env));
   lastFetch.set(store.key, Date.now());
+  await git(["config", "core.symlinks", "false"], dir);
+  await git(["remote", "set-url", "origin", store.url], dir);
+  // Explicit refspec: the clone is single-branch, and the branch may have been changed in Settings since.
+  await withAuth(store, (env) => git(["fetch", "--quiet", "origin", `+refs/heads/${store.branch}:refs/remotes/origin/${store.branch}`], dir, env));
   // Local commits only exist if a push failed earlier; those are rolled back, so the remote always wins.
   await git(["reset", "--hard", `origin/${store.branch}`], dir);
   await git(["clean", "-fdq"], dir);

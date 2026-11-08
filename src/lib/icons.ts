@@ -67,9 +67,10 @@ export async function writeIconFile(dir: string, icon: IconData): Promise<string
   const names = await readdir(dir).catch(() => [] as string[]);
   const name = `icon.${icon.ext}`;
   for (const other of names) {
-    if (ICON_FILE.test(other) && other !== name) await rm(path.join(dir, other), { force: true });
+    if (ICON_FILE.test(other)) await rm(path.join(dir, other), { force: true });
   }
-  await writeFile(path.join(dir, name), icon.data);
+  // Removed first, so a symlink committed as icon.* is replaced instead of written through.
+  await writeFile(path.join(dir, name), icon.data, { flag: "wx" });
   return name;
 }
 
@@ -83,6 +84,12 @@ export function rawFileUrl(store: LinkedStore, filePath: string): string {
   const encoded = filePath.split("/").map(encodeURIComponent).join("/");
   if (github) return `https://raw.githubusercontent.com/${github[1]}/${github[2]}/${encodeURIComponent(store.branch)}/${encoded}`;
   return `${repo}/raw/branch/${encodeURIComponent(store.branch)}/${encoded}`;
+}
+
+/** True when a manifest `icon:` value points at the icon file HeilSS keeps next to that app's manifest. */
+export function isOwnIconUrl(field: string, id: string): boolean {
+  const escaped = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`/${escaped}/icon\\.(svg|png|webp|gif|jpe?g)(\\?|$)`, "i").test(field);
 }
 
 /** What goes in umbrel-app.yml `icon:` for an icon file stored next to the manifest. */
