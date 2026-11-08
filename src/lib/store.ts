@@ -3,7 +3,7 @@ import path from "node:path";
 import { parse as parseYaml } from "yaml";
 import { buildEntry, bumpVersion, type BuildInput, type BuiltEntry, type EntryMeta } from "@/lib/build";
 import { assertWritable, commitAll, diffFor, ensureStore, historyFor, restorePath, storeMetaYaml } from "@/lib/git";
-import { decodeIconUpload, fetchRepoIcon, findIconFile, iconHash, isOwnIconUrl, manifestIconUrl, monogramIcon, writeIconFile, type IconData } from "@/lib/icons";
+import { dataUrlFor, decodeIconUpload, fetchRepoIcon, findIconFile, iconHash, isOwnIconUrl, manifestIconUrl, monogramIcon, writeIconFile, type IconData } from "@/lib/icons";
 import { withLock } from "@/lib/lock";
 import { stripDigestImage } from "@/lib/parse";
 import { activeStoreKey, storeWorkDir } from "@/lib/paths";
@@ -80,7 +80,8 @@ function iconUrlBuilder(ctx: StoreContext) {
 function iconSrcFor(id: string, icon: (IconData & { name: string }) | null, manifestIcon: string): string {
   const key = activeStoreKey();
   // Show what Umbrel shows: a data: icon or one hosted elsewhere wins over a stale local file.
-  if (manifestIcon.startsWith("data:") || (/^https?:\/\//i.test(manifestIcon) && !isOwnIconUrl(manifestIcon, id))) return manifestIcon;
+  const sameAsFile = icon !== null && manifestIcon === dataUrlFor(icon);
+  if ((manifestIcon.startsWith("data:") && !sameAsFile) || (/^https?:\/\//i.test(manifestIcon) && !isOwnIconUrl(manifestIcon, id))) return manifestIcon;
   if (icon) return `/media/apps/${id}/icon?${key ? `store=${encodeURIComponent(key)}&` : ""}v=${iconHash(icon.data)}`;
   return manifestIcon;
 }
