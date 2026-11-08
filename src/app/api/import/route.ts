@@ -8,6 +8,7 @@ export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
+    if (new URL(request.url).searchParams.get("store")) return json({ error: "Import copies apps into HeilSS's own store. Switch to it first." }, 400);
     const body = (await request.json()) as { url?: string };
     if (!body.url?.trim()) return json({ error: "Paste a community store git URL" }, 400);
     const result = await withLock(async () => {

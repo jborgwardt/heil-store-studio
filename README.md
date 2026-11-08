@@ -102,7 +102,8 @@ Use the URL shown in the app if your hostname or port differs. Add that URL as a
 
 - Paste a Compose file, a `docker run` command, a GitHub repository URL, or an image name.
 - Preview the generated `umbrel-app.yml` and `docker-compose.yml`, then save. HeilSS commits the folder into the store.
-- Upload an icon, or let HeilSS fetch one from the repository or draw a monogram.
+- Upload an icon (SVG, PNG, WebP, GIF or JPEG, up to 1 MB), or let HeilSS fetch one from the repository or draw a monogram. Every app page has a **Change icon** panel; editing an app keeps its icon unless you pick a new one.
+- **Linked stores:** under Settings → Linked stores, add the community stores your Umbrel already loads (a GitHub repo, your Gitea …). HeilSS lists their apps next to its own (store switcher on the home page), and lets you change icons and edit `umbrel-app.yml` / `docker-compose.yml` there (optionally bumping the version so Umbrel offers an update). Changes are committed and pushed to that repository; Umbrel picks them up on its next store refresh. Without an access token a linked store is read-only. GitHub: fine-grained token with Contents read and write. Gitea: Settings → Applications, repository read and write. Apps HeilSS did not create can't use the rebuild form (it would drop parts of a hand-written entry); use Change icon or Edit files.
 - Turn Umbrel login off per app. Off writes `PROXY_AUTH_ADD: "false"` on `app_proxy`. On leaves Umbrel's default login in place.
 - See port clashes, a missing registry image, and manifest problems before the commit. A registry timeout is a warning. A real "image not found" blocks the save.
 - Edit, delete, read a diff, and roll an entry back to an older commit.

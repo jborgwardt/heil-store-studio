@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { withStore } from "@/lib/store-url";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,10 +22,14 @@ type Initial = {
   umbrelLogin?: boolean;
   tagline?: string;
   version?: string;
+  iconSrc?: string;
 };
 
 export function AppForm({ initial, mode }: { initial?: Initial; mode: "create" | "edit" }) {
   const router = useRouter();
+  const store = useSearchParams().get("store") ?? "";
+  // Editing keeps the current icon unless a new one is chosen.
+  const [iconMode, setIconMode] = useState<"keep" | "upload" | "auto">(mode === "edit" ? "keep" : "auto");
   const [name, setName] = useState(initial?.name ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [category, setCategory] = useState(initial?.category ?? "");
@@ -47,6 +52,7 @@ export function AppForm({ initial, mode }: { initial?: Initial; mode: "create" |
     for (const byte of bytes) binary += String.fromCharCode(byte);
     setIconDataUrl(`data:${file.type || "image/png"};base64,${btoa(binary)}`);
     setAutoIcon(false);
+    setIconMode("upload");
   }
 
   function payload(previewOnly: boolean) {
@@ -57,8 +63,9 @@ export function AppForm({ initial, mode }: { initial?: Initial; mode: "create" |
       category: category || undefined,
       source,
       umbrelLogin,
-      autoIcon,
-      iconDataUrl: iconDataUrl || undefined,
+      autoIcon: iconMode === "auto" ? autoIcon : false,
+      keepIcon: iconMode === "keep",
+      iconDataUrl: iconMode === "upload" && iconDataUrl ? iconDataUrl : undefined,
       tagline: tagline || undefined,
       version: version || undefined,
       port: port ? Number(port) : undefined,
@@ -69,7 +76,7 @@ export function AppForm({ initial, mode }: { initial?: Initial; mode: "create" |
     setBusy(true);
     setError("");
     try {
-      const response = await fetch(mode === "edit" && !previewOnly ? `/api/apps/${initial?.id}` : "/api/apps", {
+      const response = await fetch(withStore(mode === "edit" && !previewOnly ? `/api/apps/${initial?.id}` : "/api/apps", store), {
         method: mode === "edit" && !previewOnly ? "PUT" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload(previewOnly)),
@@ -79,7 +86,7 @@ export function AppForm({ initial, mode }: { initial?: Initial; mode: "create" |
       setIssues(body.issues ?? []);
       setPreview({ id: body.id, manifestYaml: body.manifestYaml, composeYaml: body.composeYaml, detected: body.detected });
       if (!previewOnly && (body.issues ?? []).every((issue: Issue) => issue.level !== "error")) {
-        router.push(`/apps/${body.id}`);
+        router.push(withStore(`/apps/${body.id}`, store));
         router.refresh();
       }
     } catch (reason) {
@@ -121,15 +128,44 @@ export function AppForm({ initial, mode }: { initial?: Initial; mode: "create" |
           <Textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder="Optional. Leave blank to fill this from the image or repository." className="min-h-24" />
         </Field>
         <Field label="Icon">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <Input type="file" accept="image/svg+xml,image/png,image/webp,image/gif" onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) void readIcon(file);
-            }} className="h-10" />
-            <label className="flex items-center gap-2 text-sm text-white/70">
-              <Switch checked={autoIcon} onCheckedChange={(checked) => setAutoIcon(Boolean(checked))} />
-              Fetch or draw one
-            </label>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              {iconMode === "upload" && iconDataUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={iconDataUrl} alt="New icon" className="size-12 rounded-2xl border border-white/10 object-cover" />
+              ) : iconMode === "keep" && initial?.iconSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={initial.iconSrc} alt="Current icon" className="size-12 rounded-2xl border border-white/10 object-cover" />
+              ) : null}
+              <Input type="file" accept="image/svg+xml,image/png,image/webp,image/gif,image/jpeg" onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void readIcon(file);
+              }} className="h-10 max-w-xs" />
+            </div>
+            <div className="flex flex-wrap gap-4 text-sm text-white/70">
+              {mode === "edit" ? (
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="iconMode" checked={iconMode === "keep"} onChange={() => setIconMode("keep")} />
+                  Keep current icon
+                </label>
+              ) : null}
+              {iconDataUrl ? (
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="iconMode" checked={iconMode === "upload"} onChange={() => setIconMode("upload")} />
+                  Use the uploaded image
+                </label>
+              ) : null}
+              <label className="flex items-center gap-2">
+                <input type="radio" name="iconMode" checked={iconMode === "auto"} onChange={() => setIconMode("auto")} />
+                Fetch from the repo, or draw one
+              </label>
+              {iconMode === "auto" ? (
+                <label className="flex items-center gap-2">
+                  <Switch checked={autoIcon} onCheckedChange={(checked) => setAutoIcon(Boolean(checked))} />
+                  Try the repo first
+                </label>
+              ) : null}
+            </div>
           </div>
         </Field>
         <Field label="Docker Compose, docker run, GitHub URL, or image">

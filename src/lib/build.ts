@@ -1,3 +1,4 @@
+import { dataUrlFor, decodeIconUpload, isOwnIconUrl, monogramIcon, type IconData } from "@/lib/icons";
 import { parse as parseYaml, stringify } from "yaml";
 import {
   allocatePort,
@@ -26,6 +27,8 @@ export type BuildInput = {
   umbrelLogin: boolean;
   iconDataUrl?: string;
   autoIcon: boolean;
+  /** Edit: keep the icon the entry already has (default when editing). */
+  keepIcon?: boolean;
   tagline?: string;
   version?: string;
   developer?: string;
@@ -43,6 +46,10 @@ export type BuildContext = {
   usedPorts: number[];
   usedIds: string[];
   existingId?: string;
+  /** Builds umbrel-app.yml `icon:` for an icon file stored next to the manifest. */
+  iconUrl?: (id: string, icon: IconData) => string;
+  /** The entry's current icon (file + manifest value), used when keepIcon is set. */
+  existingIcon?: { icon: IconData | null; field: string };
 };
 
 export type EntryMeta = {
@@ -59,7 +66,7 @@ export type BuiltEntry = {
   id: string;
   manifestYaml: string;
   composeYaml: string;
-  iconSvg: string;
+  icon: IconData;
   iconDataUrl: string;
   dataDirs: string[];
   meta: EntryMeta;
@@ -302,42 +309,6 @@ async function githubSource(source: string): Promise<{ compose?: string; image?:
   };
 }
 
-function monogramSvg(name: string): string {
-  const initials = name
-    .split(/[^A-Za-z0-9]+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("") || "A";
-  let hash = 0;
-  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
-  const hue = hash % 360;
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-  <rect width="256" height="256" rx="56" fill="#14161e"/>
-  <rect x="18" y="18" width="220" height="220" rx="46" fill="hsl(${hue} 28% 18%)"/>
-  <text x="128" y="148" text-anchor="middle" font-family="Inter, ui-sans-serif, sans-serif" font-size="92" font-weight="650" fill="#f4f4f5">${initials}</text>
-</svg>
-`;
-}
-
-function dataUrlFromSvg(svg: string): string {
-  return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
-}
-
-function decodeDataUrl(dataUrl: string): { mime: string; svg?: string } {
-  const match = dataUrl.match(/^data:([^;,]+)?(?:;base64)?,([\s\S]*)$/);
-  if (!match) return { mime: "application/octet-stream" };
-  const mime = match[1] || "application/octet-stream";
-  if (!dataUrl.includes(";base64,") && mime.includes("svg")) {
-    return { mime, svg: decodeURIComponent(match[2]) };
-  }
-  if (mime.includes("svg")) {
-    return { mime, svg: Buffer.from(match[2], "base64").toString("utf8") };
-  }
-  return { mime };
-}
-
 function pickId(storeId: string, name: string, requested: string | undefined, used: string[], existing?: string): string {
   if (existing) return existing;
   if (requested) {
@@ -498,20 +469,34 @@ export async function buildEntry(input: BuildInput, context: BuildContext): Prom
   const id = pickId(context.storeId, name, input.appId, context.usedIds, context.existingId);
   const port = allocatePort(new Set(context.usedPorts), input.port);
 
-  let iconSvg = fetchedIcon && input.autoIcon ? fetchedIcon : monogramSvg(name);
-  let iconDataUrl = dataUrlFromSvg(iconSvg);
+  let icon: IconData;
+  let iconField: string | undefined;
   if (input.iconDataUrl) {
-    const decoded = decodeDataUrl(input.iconDataUrl);
-    iconDataUrl = input.iconDataUrl;
-    if (decoded.svg) iconSvg = decoded.svg;
-  } else if (!input.autoIcon) {
-    iconSvg = monogramSvg(name);
-    iconDataUrl = dataUrlFromSvg(iconSvg);
+    icon = decodeIconUpload(input.iconDataUrl);
+  } else if (input.keepIcon && context.existingIcon) {
+    const { icon: fileIcon, field } = context.existingIcon;
+    if (field.startsWith("data:")) {
+      // Older HeilSS kept raster uploads only in the manifest (icon.svg was a monogram): adopt the real one.
+      try {
+        icon = decodeIconUpload(field);
+      } catch {
+        icon = fileIcon ?? monogramIcon(name);
+        iconField = field;
+      }
+    } else if (/^https?:\/\//i.test(field) && !isOwnIconUrl(field, id)) {
+      // Hosted elsewhere (e.g. an icons repo): keep that URL as it is.
+      icon = fileIcon ?? monogramIcon(name);
+      iconField = field;
+    } else {
+      icon = fileIcon ?? monogramIcon(name);
+    }
+  } else if (fetchedIcon && input.autoIcon) {
+    icon = { ext: "svg", data: Buffer.from(fetchedIcon, "utf8") };
+  } else {
+    icon = monogramIcon(name);
   }
-  const iconField =
-    context.publicBaseUrl && !input.iconDataUrl
-      ? `${context.publicBaseUrl}/media/apps/${id}/icon.svg`
-      : iconDataUrl;
+  const iconDataUrl = dataUrlFor(icon);
+  if (!iconField) iconField = context.iconUrl ? context.iconUrl(id, icon) : iconDataUrl;
 
   const proxyEnv: Record<string, string | number> = {
     APP_HOST: `${id}_${primary}_1`,
@@ -567,7 +552,7 @@ export async function buildEntry(input: BuildInput, context: BuildContext): Prom
     id,
     manifestYaml,
     composeYaml,
-    iconSvg,
+    icon,
     iconDataUrl,
     dataDirs,
     detected: kind,

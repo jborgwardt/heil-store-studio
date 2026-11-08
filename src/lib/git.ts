@@ -2,8 +2,10 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { access, chmod, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { storeBareDir, storeWorkDir, dataDir } from "@/lib/paths";
+import { activeStoreKey, linkedStoreDir, storeBareDir, storeWorkDir, dataDir } from "@/lib/paths";
+import { findLinkedStore, readSettings, type LinkedStore } from "@/lib/settings";
 import { redactString } from "@/lib/redact";
+import { lockBusy } from "@/lib/lock";
 
 const exec = promisify(execFile);
 
@@ -47,7 +49,77 @@ export function storeMetaYaml(id: string, name: string): string {
   ].join("\n");
 }
 
+/**
+ * Run git with credentials for a linked store. The token never appears in argv, the remote URL or .git/config:
+ * git asks GIT_ASKPASS, which reads it from the environment of this one process.
+ */
+async function withAuth<T>(store: LinkedStore, fn: (env: Record<string, string>) => Promise<T>): Promise<T> {
+  if (!store.token) return fn({});
+  const askpass = path.join(dataDir(), `git-askpass-${process.pid}-${Math.random().toString(36).slice(2)}.sh`);
+  await mkdir(dataDir(), { recursive: true });
+  await writeFile(askpass, "#!/bin/sh\ncase \"$1\" in\n  *Username*) printf '%s\\n' \"$HEILSS_GIT_USER\" ;;\n  *) printf '%s\\n' \"$HEILSS_GIT_TOKEN\" ;;\nesac\n", { mode: 0o700 });
+  await chmod(askpass, 0o700);
+  const user = store.username || (/github\.com/i.test(store.url) ? "x-access-token" : store.token);
+  try {
+    return await fn({ GIT_ASKPASS: askpass, HEILSS_GIT_USER: user, HEILSS_GIT_TOKEN: store.token });
+  } finally {
+    await rm(askpass, { force: true });
+  }
+}
+
+const lastFetch = new Map<string, number>();
+const inflight = new Map<string, Promise<void>>();
+
+/** Clone a linked store, or bring a clean clone up to date with its remote branch. Concurrent callers share one sync. */
+export function syncLinkedStore(store: LinkedStore, opts: { force?: boolean } = {}): Promise<void> {
+  const running = inflight.get(store.key);
+  if (running) return running;
+  const job = doSyncLinkedStore(store, opts).finally(() => inflight.delete(store.key));
+  inflight.set(store.key, job);
+  return job;
+}
+
+async function doSyncLinkedStore(store: LinkedStore, { force = false }: { force?: boolean }): Promise<void> {
+  const dir = linkedStoreDir(store.key);
+  const hasGit = await access(path.join(dir, ".git")).then(() => true, () => false);
+  if (!hasGit) {
+    // Clone next to the final folder and rename, so an interrupted clone never looks like a store.
+    const tmp = `${dir}.cloning-${process.pid}`;
+    await rm(tmp, { recursive: true, force: true });
+    await rm(dir, { recursive: true, force: true });
+    await mkdir(path.dirname(dir), { recursive: true });
+    // core.symlinks=false: links in someone else's repo become plain files, never paths out of the clone.
+    await withAuth(store, (env) => git(["-c", "core.symlinks=false", "clone", "--branch", store.branch, "--single-branch", "--", store.url, tmp], path.dirname(dir), env));
+    await git(["config", "core.symlinks", "false"], tmp);
+    await git(["config", "user.name", "HeilSS"], tmp);
+    await git(["config", "user.email", "heilss@localhost"], tmp);
+    const { rename } = await import("node:fs/promises");
+    await rename(tmp, dir);
+    lastFetch.set(store.key, Date.now());
+    return;
+  }
+  // A locked write is using the tree; plain reads serve what is there instead of resetting under it.
+  if (!force && lockBusy()) return;
+  if (!force && Date.now() - (lastFetch.get(store.key) ?? 0) < 20_000) return;
+  lastFetch.set(store.key, Date.now());
+  await git(["config", "core.symlinks", "false"], dir);
+  await git(["remote", "set-url", "origin", store.url], dir);
+  // Explicit refspec: the clone is single-branch, and the branch may have been changed in Settings since.
+  await withAuth(store, (env) => git(["fetch", "--quiet", "origin", `+refs/heads/${store.branch}:refs/remotes/origin/${store.branch}`], dir, env));
+  // Local commits only exist if a push failed earlier; those are rolled back, so the remote always wins.
+  await git(["reset", "--hard", `origin/${store.branch}`], dir);
+  await git(["clean", "-fdq"], dir);
+}
+
+async function activeLinkedStore(): Promise<LinkedStore | null> {
+  const key = activeStoreKey();
+  if (!key) return null;
+  return findLinkedStore(await readSettings(), key);
+}
+
 export async function ensureStore(storeId: string, storeName: string): Promise<void> {
+  const linked = await activeLinkedStore();
+  if (linked) return syncLinkedStore(linked);
   const work = storeWorkDir();
   const bare = storeBareDir();
   await mkdir(work, { recursive: true });
@@ -110,6 +182,15 @@ export async function publishBare(): Promise<void> {
   await git(["push", "--set-upstream", "origin", "HEAD:main"]);
 }
 
+/** Fail early (before touching files) when the active linked store cannot be pushed to. */
+export async function assertWritable(): Promise<void> {
+  const linked = await activeLinkedStore();
+  if (linked && !linked.token) {
+    throw new Error(`${linked.url} is read-only in HeilSS until you add an access token for it in Settings → Linked stores.`);
+  }
+  if (linked) await syncLinkedStore(linked, { force: true });
+}
+
 export async function commitAll(message: string): Promise<string> {
   await git(["add", "-A"]);
   const status = await git(["status", "--porcelain"]);
@@ -118,7 +199,19 @@ export async function commitAll(message: string): Promise<string> {
     return head.trim();
   }
   await git(["commit", "-m", message]);
-  await publishBare();
+  const linked = await activeLinkedStore();
+  if (linked) {
+    try {
+      await withAuth(linked, (env) => git(["push", "origin", `HEAD:${linked.branch}`], storeWorkDir(), env));
+    } catch (error) {
+      await git(["reset", "--hard", `origin/${linked.branch}`]).catch(() => "");
+      await git(["clean", "-fdq"]).catch(() => "");
+      throw new Error(`Nothing was changed: the push to ${linked.url} failed. ${(error as Error).message}`);
+    }
+    lastFetch.set(linked.key, Date.now());
+  } else {
+    await publishBare();
+  }
   const head = await git(["rev-parse", "HEAD"]);
   return head.trim();
 }

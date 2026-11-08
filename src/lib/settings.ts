@@ -12,6 +12,17 @@ export type DomainSettings = {
   caddyUpstream: string;
 };
 
+/** A community store git repository that Umbrel already loads, edited in place by HeilSS. */
+export type LinkedStore = {
+  key: string;
+  url: string;
+  branch: string;
+  username: string;
+  token: string;
+};
+
+export type PublicLinkedStore = Omit<LinkedStore, "token"> & { hasToken: boolean };
+
 export type Settings = {
   storeId: string;
   storeName: string;
@@ -32,6 +43,7 @@ export type Settings = {
     fileName: string;
   };
   domain: DomainSettings;
+  stores: LinkedStore[];
 };
 
 export const defaultSettings = (): Settings => ({
@@ -58,6 +70,7 @@ export const defaultSettings = (): Settings => ({
     proxied: false,
     caddyUpstream: "umbrel.local:8480",
   },
+  stores: [],
 });
 
 export async function readSettings(): Promise<Settings> {
@@ -85,13 +98,45 @@ export function mergeSettings(base: Settings, patch: Partial<Settings>): Setting
     github: { ...base.github, ...patch.github },
     drive: { ...base.drive, ...patch.drive },
     domain: { ...base.domain, ...patch.domain },
+    stores: Array.isArray(patch.stores) ? patch.stores.map(normalizeLinkedStore).filter((s): s is LinkedStore => s !== null) : base.stores,
   };
+}
+
+export function storeKeyFor(url: string): string {
+  const clean = url.trim().replace(/\.git$/, "").replace(/\/+$/, "");
+  const parts = clean.split(/[/:]/).filter(Boolean);
+  const tail = parts.slice(-2).join("-") || "store";
+  return tail.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "store";
+}
+
+function normalizeLinkedStore(value: unknown): LinkedStore | null {
+  if (!value || typeof value !== "object") return null;
+  const v = value as Record<string, unknown>;
+  const url = typeof v.url === "string" ? v.url.trim() : "";
+  // file:// remotes are for tests only (HEILSS_ALLOW_FILE_REMOTES=1).
+  if (!/^https?:\/\/[^\s]+$/.test(url) && !(process.env.HEILSS_ALLOW_FILE_REMOTES === "1" && /^file:\/\/\/[^\s]+$/.test(url))) return null;
+  const key = typeof v.key === "string" && /^[a-z0-9][a-z0-9-]{0,59}$/.test(v.key) ? v.key : storeKeyFor(url);
+  const branch = typeof v.branch === "string" && /^[A-Za-z0-9][A-Za-z0-9._/-]*$/.test(v.branch.trim()) && !v.branch.includes("..") ? v.branch.trim() : "main";
+  return {
+    key,
+    url,
+    branch,
+    username: typeof v.username === "string" ? v.username.trim() : "",
+    token: typeof v.token === "string" ? v.token.trim() : "",
+  };
+}
+
+export function findLinkedStore(settings: Settings, key: string): LinkedStore {
+  const store = settings.stores.find((item) => item.key === key);
+  if (!store) throw new Error(`No linked store named ${key}`);
+  return store;
 }
 
 export type PublicSettings = Omit<
   Settings,
-  "umbrelMcpToken" | "github" | "drive" | "domain"
+  "umbrelMcpToken" | "github" | "drive" | "domain" | "stores"
 > & {
+  stores: PublicLinkedStore[];
   github: Omit<Settings["github"], "token">;
   drive: Omit<Settings["drive"], "accessToken">;
   domain: Omit<DomainSettings, "cloudflareToken">;
@@ -129,6 +174,7 @@ export function toPublicSettings(settings: Settings): PublicSettings {
       proxied: settings.domain.proxied,
       caddyUpstream: settings.domain.caddyUpstream,
     },
+    stores: settings.stores.map(({ token, ...rest }) => ({ ...rest, hasToken: token.length > 0 })),
     secrets: {
       umbrelMcpToken: settings.umbrelMcpToken.length > 0,
       githubToken: settings.github.token.length > 0,
@@ -193,6 +239,25 @@ export function applySettingsPatch(current: Settings, patch: Record<string, unkn
       next.domain.cloudflareToken = d.cloudflareToken.trim();
     }
     if (d.clearToken === true) next.domain.cloudflareToken = "";
+  }
+
+  if (Array.isArray(patch.stores)) {
+    const incoming: LinkedStore[] = [];
+    for (const raw of patch.stores) {
+      const rawUrl = String((raw as Record<string, unknown>)?.url ?? "");
+      if (/^https?:\/\/[^/]*@/i.test(rawUrl)) throw new Error("Put the access token in the token field, not inside the store URL.");
+      const item = normalizeLinkedStore(raw);
+      if (!item) throw new Error("Each linked store needs an http(s) git URL");
+      // A saved token only carries over to the same URL, so it is never sent to a different host.
+      const previous = current.stores.find((store) => store.url === item.url);
+      const r = raw as Record<string, unknown>;
+      // Keep the saved token unless a new one is typed; "********" is the masked placeholder.
+      if (!item.token || item.token === "********") item.token = previous?.token ?? "";
+      if (r.clearToken === true) item.token = "";
+      if (incoming.some((store) => store.key === item.key)) throw new Error(`Two linked stores share the key ${item.key}`);
+      incoming.push(item);
+    }
+    next.stores = incoming;
   }
 
   for (const key of Object.keys(patch)) {

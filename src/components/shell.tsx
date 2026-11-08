@@ -40,9 +40,9 @@ export function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function Glass({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+export function Glass({ children, className = "", id }: { children: React.ReactNode; className?: string; id?: string }) {
   return (
-    <section className={`rounded-3xl border border-white/10 bg-white/[0.045] shadow-[0_20px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl ${className}`}>
+    <section id={id} className={`rounded-3xl border border-white/10 bg-white/[0.045] shadow-[0_20px_80px_rgba(0,0,0,0.28)] backdrop-blur-2xl ${className}`}>
       {children}
     </section>
   );
