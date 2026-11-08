@@ -19,7 +19,9 @@
         "-rpcport=9332",
         "-dbcache=450",
         "-maxconnections=32",
-        "-upnp=0"
+        "-upnp=0",
+        "-txindex=1",
+        "-rpcserialversion=1"
       ],
       "volumes": [
         "${APP_DATA_DIR}/data/chain:/home/litecoin/.litecoin"
@@ -81,6 +83,48 @@
         ],
         "interval": "30s",
         "timeout": "20s",
+        "retries": 5,
+        "start_period": "120s"
+      }
+    },
+    "electrum": {
+      "image": "cculianu/fulcrum:v2.1.4@sha256:3de5dc10d6fd331a61adf54bc238bc01d1fc9618f2f763e2454e21b4e6d888b1",
+      "entrypoint": [
+        "/usr/bin/Fulcrum"
+      ],
+      "command": [
+        "/app/fulcrum.conf"
+      ],
+      "restart": "unless-stopped",
+      "stop_grace_period": "2m",
+      "volumes": [
+        "${APP_DATA_DIR}/fulcrum.conf:/app/fulcrum.conf:ro",
+        "${APP_DATA_DIR}/data/electrum:/data",
+        "${APP_DATA_DIR}/data/chain:/chain:ro"
+      ],
+      "networks": [
+        "rpc"
+      ],
+      "ports": [
+        "50001:50001"
+      ],
+      "depends_on": [
+        "node"
+      ],
+      "mem_limit": "1800m",
+      "cpus": 2,
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD",
+          "python3",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8888/stats',timeout=10).read()"
+        ],
+        "interval": "30s",
+        "timeout": "15s",
         "retries": 5,
         "start_period": "120s"
       }
