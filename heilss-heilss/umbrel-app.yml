@@ -4,7 +4,7 @@ storage:
   dataRoot: data
 category: developer
 name: HeilSS
-version: "1.0.0"
+version: "1.1.0"
 tagline: Build and manage a community app store
 icon: https://raw.githubusercontent.com/jborgwardt/heil-store-studio/main/images/icons/heilss.png
 description: >-
@@ -15,7 +15,12 @@ description: >-
 
   HeilSS itself is not one of the apps in the store it manages. Open it from
   your Umbrel desktop, then add the store URL it shows under Community App Stores.
-releaseNotes: ""
+releaseNotes: >-
+  Linked stores: HeilSS now shows the community stores your Umbrel already loads
+  (GitHub, Gitea) next to its own, with a store switcher and search. Every app has a
+  Change icon panel (upload SVG/PNG/WebP/GIF/JPEG, fetch from the repo, or a monogram)
+  and an Edit files editor; changes are committed and pushed back. Editing keeps the
+  current icon. Fixed icon links that returned 404.
 developer: Heil
 website: https://heil.haus
 dependencies: []
