@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { withStore } from "@/lib/store-url";
 import { Button } from "@/components/ui/button";
 import { Glass } from "@/components/shell";
 import {
@@ -23,6 +24,8 @@ type Detail = {
   version: string;
   port: number;
   icon: string;
+  iconSrc: string;
+  managed: boolean;
   umbrelLogin: boolean;
   image?: string;
   manifestYaml: string;
@@ -34,6 +37,8 @@ type HistoryItem = { sha: string; date: string; subject: string };
 
 export function AppDetail({ id }: { id: string }) {
   const router = useRouter();
+  const store = useSearchParams().get("store") ?? "";
+  const api = (path: string) => withStore(path, store);
   const [app, setApp] = useState<Detail | null>(null);
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [diff, setDiff] = useState("");
@@ -44,11 +49,11 @@ export function AppDetail({ id }: { id: string }) {
   const [imageUpdate, setImageUpdate] = useState<{ update: boolean; detail?: string; latestDigest?: string } | null>(null);
 
   async function load() {
-    const response = await fetch(`/api/apps/${id}`);
+    const response = await fetch(api(`/api/apps/${id}`));
     const body = await response.json();
     if (!response.ok) throw new Error(body.error || "App not found");
     setApp(body);
-    const historyResponse = await fetch(`/api/apps/${id}/history`);
+    const historyResponse = await fetch(api(`/api/apps/${id}/history`));
     const historyBody = await historyResponse.json();
     if (historyResponse.ok) setHistory(historyBody.history ?? []);
   }
@@ -64,12 +69,12 @@ export function AppDetail({ id }: { id: string }) {
     setError("");
     setNotice("");
     try {
-      const response = await fetch(path, options);
+      const response = await fetch(api(path), options);
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "Request failed");
-      setNotice(typeof body === "object" ? JSON.stringify(body, null, 2) : String(body));
+      setNotice(label === "Icon" || label === "Files" ? "" : typeof body === "object" ? JSON.stringify(body, null, 2) : String(body));
       if (label === "Delete") {
-        router.push("/");
+        router.push(withStore("/", store));
         return;
       }
       await load();
@@ -88,7 +93,7 @@ export function AppDetail({ id }: { id: string }) {
       <Glass className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center">
         <span className="grid size-20 shrink-0 place-items-center overflow-hidden rounded-[24px] border border-white/10 bg-[#14161e]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={app.icon.startsWith("data:") || app.icon.startsWith("http") ? app.icon : `/media/apps/${app.id}/icon.svg`} alt="" className="size-full object-cover" />
+          <img src={app.iconSrc || app.icon} alt="" className="size-full object-cover" />
         </span>
         <div className="min-w-0 flex-1">
           <p className="text-xs tracking-[0.16em] text-white/40 uppercase">{app.category}</p>
@@ -105,9 +110,11 @@ export function AppDetail({ id }: { id: string }) {
       {notice ? <pre className="max-h-48 overflow-auto rounded-2xl bg-black/30 p-4 text-xs text-white/70">{notice}</pre> : null}
 
       <div className="flex flex-wrap gap-2">
-        <Button render={<Link href={`/apps/${app.id}/edit`} />} nativeButton={false} variant="secondary" className="h-10">
-          Edit
-        </Button>
+        {app.managed ? (
+          <Button render={<Link href={withStore(`/apps/${app.id}/edit`, store)} />} nativeButton={false} variant="secondary" className="h-10">
+            Edit
+          </Button>
+        ) : null}
         <Button className="h-10" disabled={Boolean(busy)} onClick={() => act(`/api/apps/${app.id}/umbrel`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "install" }) }, "Install")}>
           {busy === "Install" ? "Installing…" : "Install on Umbrel"}
         </Button>
@@ -121,7 +128,7 @@ export function AppDetail({ id }: { id: string }) {
           setBusy("Check");
           setError("");
           try {
-            const response = await fetch(`/api/apps/${app.id}/image`);
+            const response = await fetch(api(`/api/apps/${app.id}/image`));
             const body = await response.json();
             if (!response.ok) throw new Error(body.error || "Could not check the image");
             setImageUpdate(body);
@@ -147,6 +154,18 @@ export function AppDetail({ id }: { id: string }) {
         Install asks Umbrel over MCP. The store URL has to be added on the Umbrel first, and the token needs App Store access. Umbrel pulls the git store on its own schedule. There is no separate refresh tool.
       </p>
 
+      <IconPanel
+        app={app}
+        busy={busy}
+        onChange={(change) => act(`/api/apps/${app.id}/icon`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(change) }, "Icon")}
+      />
+
+      <FilesPanel
+        app={app}
+        busy={busy}
+        onSave={(files) => act(`/api/apps/${app.id}/files`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(files) }, "Files")}
+      />
+
       <Glass className="p-5">
         <h2 className="text-base font-medium">History</h2>
         {history.length === 0 ? <p className="mt-3 text-sm text-white/55">No commits for this app yet.</p> : (
@@ -159,7 +178,7 @@ export function AppDetail({ id }: { id: string }) {
                 </div>
                 <div className="flex gap-2">
                   <Button variant="secondary" size="sm" onClick={() => act(`/api/apps/${app.id}/history?diff=${item.sha}`, {}, "Diff").then(async () => {
-                    const response = await fetch(`/api/apps/${app.id}/history?diff=${item.sha}`);
+                    const response = await fetch(api(`/api/apps/${app.id}/history?diff=${item.sha}`));
                     const body = await response.json();
                     if (response.ok) setDiff(body.diff || "");
                   })}>
@@ -200,5 +219,131 @@ export function AppDetail({ id }: { id: string }) {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+type IconChangeBody = { mode: "upload"; dataUrl: string } | { mode: "fetch" } | { mode: "monogram" };
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error("Could not read the file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function IconPanel({ app, busy, onChange }: { app: Detail; busy: string; onChange: (change: IconChangeBody) => Promise<void> }) {
+  const [pending, setPending] = useState<{ dataUrl: string; name: string } | null>(null);
+  const [problem, setProblem] = useState("");
+  const working = busy === "Icon";
+  return (
+    <Glass className="p-5">
+      <h2 className="text-base font-medium">Icon</h2>
+      <p className="mt-1 text-sm leading-6 text-white/55">
+        Upload an SVG, PNG, WebP, GIF or JPEG (up to 1 MB, square works best). HeilSS stores it next to the manifest, points <code>icon:</code> at it and commits.
+      </p>
+      <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className="flex items-center gap-3">
+          <span className="grid size-16 place-items-center overflow-hidden rounded-[20px] border border-white/10 bg-[#14161e]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={app.iconSrc || app.icon} alt="Current icon" className="size-full object-cover" />
+          </span>
+          {pending ? (
+            <>
+              <span className="text-white/40">→</span>
+              <span className="grid size-16 place-items-center overflow-hidden rounded-[20px] border border-emerald-300/40 bg-[#14161e]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={pending.dataUrl} alt="New icon" className="size-full object-cover" />
+              </span>
+            </>
+          ) : null}
+        </div>
+        <div className="flex flex-1 flex-wrap items-center gap-2">
+          <label className="inline-flex h-10 cursor-pointer items-center rounded-lg border border-white/15 bg-white/5 px-3 text-sm hover:bg-white/10">
+            Choose image…
+            <input
+              type="file"
+              accept="image/svg+xml,image/png,image/webp,image/gif,image/jpeg"
+              className="sr-only"
+              onChange={async (event) => {
+                setProblem("");
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (!file) return;
+                if (file.size > 1024 * 1024) {
+                  setProblem("That image is larger than 1 MB.");
+                  return;
+                }
+                setPending({ dataUrl: await readAsDataUrl(file), name: file.name });
+              }}
+            />
+          </label>
+          {pending ? (
+            <>
+              <Button className="h-10" disabled={Boolean(busy)} onClick={() => onChange({ mode: "upload", dataUrl: pending.dataUrl }).then(() => setPending(null))}>
+                {working ? "Saving…" : `Use ${pending.name}`}
+              </Button>
+              <Button variant="ghost" className="h-10" disabled={Boolean(busy)} onClick={() => setPending(null)}>
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="secondary" className="h-10" disabled={Boolean(busy)} onClick={() => onChange({ mode: "fetch" })}>
+                Fetch from repo
+              </Button>
+              <Button variant="secondary" className="h-10" disabled={Boolean(busy)} onClick={() => onChange({ mode: "monogram" })}>
+                Draw monogram
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+      {problem ? <p className="mt-3 text-sm text-rose-100">{problem}</p> : null}
+    </Glass>
+  );
+}
+
+function FilesPanel({ app, busy, onSave }: { app: Detail; busy: string; onSave: (files: { manifestYaml: string; composeYaml: string; bump: boolean }) => Promise<void> }) {
+  const [open, setOpen] = useState(false);
+  const [manifestYaml, setManifestYaml] = useState(app.manifestYaml);
+  const [composeYaml, setComposeYaml] = useState(app.composeYaml);
+  const [bump, setBump] = useState(true);
+  useEffect(() => {
+    setManifestYaml(app.manifestYaml);
+    setComposeYaml(app.composeYaml);
+  }, [app.manifestYaml, app.composeYaml]);
+  if (!open) {
+    return (
+      <Button variant="secondary" className="h-10" onClick={() => setOpen(true)}>
+        Edit files
+      </Button>
+    );
+  }
+  return (
+    <Glass className="space-y-4 p-5">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-base font-medium">Edit files</h2>
+        <Button variant="ghost" size="sm" onClick={() => setOpen(false)}>Close</Button>
+      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <label className="block space-y-1.5">
+          <span className="text-xs tracking-wide text-white/40 uppercase">umbrel-app.yml</span>
+          <textarea value={manifestYaml} onChange={(event) => setManifestYaml(event.target.value)} spellCheck={false} className="h-96 w-full rounded-xl border border-white/10 bg-black/30 p-3 font-mono text-xs leading-5 text-white/85" />
+        </label>
+        <label className="block space-y-1.5">
+          <span className="text-xs tracking-wide text-white/40 uppercase">docker-compose.yml</span>
+          <textarea value={composeYaml} onChange={(event) => setComposeYaml(event.target.value)} spellCheck={false} className="h-96 w-full rounded-xl border border-white/10 bg-black/30 p-3 font-mono text-xs leading-5 text-white/85" />
+        </label>
+      </div>
+      <label className="flex items-center gap-2 text-sm text-white/70">
+        <input type="checkbox" checked={bump} onChange={(event) => setBump(event.target.checked)} />
+        Bump the version so Umbrel offers this as an update
+      </label>
+      <Button className="h-10" disabled={Boolean(busy)} onClick={() => onSave({ manifestYaml, composeYaml, bump }).then(() => setOpen(false))}>
+        {busy === "Files" ? "Saving…" : "Save and commit"}
+      </Button>
+    </Glass>
   );
 }

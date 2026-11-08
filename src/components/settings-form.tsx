@@ -24,6 +24,7 @@ type PublicSettings = {
     proxied: boolean;
     caddyUpstream: string;
   };
+  stores: LinkedStoreRow[];
   secrets: {
     umbrelMcpToken: boolean;
     githubToken: boolean;
@@ -32,7 +33,10 @@ type PublicSettings = {
   };
 };
 
+type LinkedStoreRow = { key?: string; url: string; branch: string; username: string; hasToken?: boolean; clearToken?: boolean };
+
 export function SettingsForm() {
+  const [storeTokens, setStoreTokens] = useState<Record<number, string>>({});
   const [settings, setSettings] = useState<PublicSettings | null>(null);
   const [tokens, setTokens] = useState({ umbrel: "", github: "", drive: "", cloudflare: "" });
   const [message, setMessage] = useState("");
@@ -68,12 +72,14 @@ export function SettingsForm() {
           github: { ...current.github, token: tokens.github },
           drive: { ...current.drive, accessToken: tokens.drive },
           domain: { ...current.domain, cloudflareToken: tokens.cloudflare },
+          stores: current.stores.map((store, index) => ({ ...store, token: storeTokens[index] ?? "" })),
         }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error || "Could not save settings");
       setSettings(body.settings);
       setTokens({ umbrel: "", github: "", drive: "", cloudflare: "" });
+      setStoreTokens({});
       setMessage("Saved. Tokens stay in this app's data directory and are not shown again.");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not save settings");
@@ -145,6 +151,39 @@ export function SettingsForm() {
             <Input value={settings.publicBaseUrl} onChange={(event) => update("publicBaseUrl", event.target.value)} placeholder="http://umbrel.local:8480" className="h-10" />
           </Field>
         </div>
+      </Glass>
+
+      <Glass className="space-y-4 p-5" id="linked-stores">
+        <h2 className="text-base font-medium">Linked stores</h2>
+        <p className="text-sm leading-6 text-white/55">
+          Community stores your Umbrel already loads (App Store → Community App Stores), e.g. a GitHub repo or your Gitea. HeilSS shows their apps and commits icon and file changes back.
+          Without a token a store is read-only. GitHub: a fine-grained token with Contents read and write. Gitea: Settings → Applications, repository read and write.
+        </p>
+        {settings.stores.map((store, index) => (
+          <div key={store.key ?? index} className="space-y-3 rounded-2xl border border-white/10 p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="truncate font-mono text-xs text-white/70">{store.url || "New store"}</p>
+              <Button type="button" variant="ghost" size="sm" onClick={() => update("stores", settings.stores.filter((_, i) => i !== index))}>Remove</Button>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Field label="Git URL">
+                <Input value={store.url} onChange={(event) => update("stores", settings.stores.map((s, i) => (i === index ? { ...s, url: event.target.value } : s)))} placeholder="https://github.com/you/your-store" className="h-10" />
+              </Field>
+              <Field label="Branch">
+                <Input value={store.branch} onChange={(event) => update("stores", settings.stores.map((s, i) => (i === index ? { ...s, branch: event.target.value } : s)))} className="h-10" />
+              </Field>
+              <Field label="Username (optional)">
+                <Input value={store.username} onChange={(event) => update("stores", settings.stores.map((s, i) => (i === index ? { ...s, username: event.target.value } : s)))} className="h-10" />
+              </Field>
+              <Field label={store.hasToken ? "Token saved. Paste a new one to replace it." : "Access token (needed to save changes)"}>
+                <Input type="password" value={storeTokens[index] ?? ""} onChange={(event) => setStoreTokens({ ...storeTokens, [index]: event.target.value })} autoComplete="off" className="h-10" />
+              </Field>
+            </div>
+          </div>
+        ))}
+        <Button type="button" variant="secondary" onClick={() => update("stores", [...settings.stores, { url: "", branch: "main", username: "" }])}>
+          Add a store
+        </Button>
       </Glass>
 
       <Glass className="space-y-4 p-5">

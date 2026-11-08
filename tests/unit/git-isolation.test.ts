@@ -1,11 +1,12 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync } from "node:fs";
+import { mkdtempSync, realpathSync } from "node:fs";
 import { rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 
-const parent = mkdtempSync(path.join(os.tmpdir(), "heilss-parent-"));
+// realpath: on macOS os.tmpdir() is a symlink into /private, and git reports the resolved path.
+const parent = realpathSync(mkdtempSync(path.join(os.tmpdir(), "heilss-parent-")));
 
 function git(args: string[], cwd = parent): string {
   return execFileSync("git", args, { cwd, encoding: "utf8" });
