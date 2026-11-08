@@ -1,0 +1,21 @@
+version: "3.7"
+services:
+  app_proxy:
+    environment:
+      APP_HOST: heilss-feather_web_1
+      APP_PORT: 6080
+  web:
+    image: ghcr.io/jborgwardt/heil-store-studio:feather-2.9.1-1@sha256:6d5e48b7ed929e8aef7fadc910b6a0c00803f1d7f0a668f19672d2c9119a4bc0
+    restart: on-failure
+    stop_grace_period: 30s
+    shm_size: 256mb
+    environment:
+      MONERO_HOST: ${APP_MONERO_NODE_IP}
+      MONERO_PORT: ${APP_MONERO_RPC_PORT}
+      MONERO_USER: ${APP_MONERO_RPC_USER}
+      MONERO_PASSWORD: ${APP_MONERO_RPC_PASS}
+    volumes:
+      - ${APP_DATA_DIR}/data:/data
+    networks:
+      default:
+        ipv4_address: ${APP_FEATHER_IP}
